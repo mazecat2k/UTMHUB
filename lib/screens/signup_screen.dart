@@ -108,17 +108,18 @@ class _SignupScreenState extends State<SignupScreen> {
                       borderRadius: BorderRadius.all(Radius.circular(4)),
                     ),
                     color: Color.fromRGBO(224, 167, 34, 1),
-                  ),
+                  ),                  
                   child: InkWell(
-                    onTap: async {
-                    String res= await AuthMethods().signUpUser(email: _emailController.text, password: _passwordController.text, username: _usernameController.text, bio: _bioController.text);
-                    
-                    print(res)
-                    },
-
-                    {
+                    onTap: () async {
                       // Add signup logic here
                       print("Sign up button tapped");
+                      String res = await AuthMethods().signUpUser(
+                        email: _emailController.text, 
+                        password: _passwordController.text, 
+                        username: _usernameController.text, 
+                        bio: _bioController.text
+                      );
+                      print(res);
                     },
                     child: const Text('Sign up'),
                   ),
