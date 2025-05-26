@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:utmhub/screens/login_screen.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -34,8 +35,11 @@ class ProfilePage extends StatelessWidget {
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
-                // Dummy logout
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                // Navigate to login screen and remove all previous routes
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false, // Remove all previous routes
+                );
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text('Logout'),
