@@ -25,7 +25,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 40),
             ElevatedButton(
               onPressed: () {
-                // Navigate to login screen and remove all previous routes
+                // Navigate to login screen
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
                     builder: (context) => const LoginScreen(),

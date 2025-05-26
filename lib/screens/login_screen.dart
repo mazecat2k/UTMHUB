@@ -4,6 +4,7 @@ import 'package:utmhub/widgets/text_field_input.dart';
 import 'package:utmhub/screens/signup_screen.dart';
 import 'package:utmhub/screens/home_screen.dart';
 import 'package:utmhub/resources/auth_methods.dart';
+import 'package:utmhub/screens/forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -73,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen>{
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 32),
             width:double.infinity,
-            // Remove the fixed height to allow scrolling
+            // Removed the fixed height to allow scrolling
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center ,
               children: [
@@ -116,6 +117,9 @@ class _LoginScreenState extends State<LoginScreen>{
                 ),
                 //login button
                 InkWell(
+
+                  //codndition to check which one should be called
+                  //also makes sure no double clidk
                   onTap: _isLoading ? null : loginUser,
                   child: Container(
                     width: double.infinity,
@@ -140,8 +144,33 @@ class _LoginScreenState extends State<LoginScreen>{
                 ),
                 const SizedBox(
                   height: 24,
+                ),                //Extras
+                //goes to forgot password page when user clicks on "Forgot password?"
+                GestureDetector(
+                  onTap: (){
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: RichText(
+                      text: const TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "Forgot password? ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                //Extras
+                SizedBox(height: 40),
                 GestureDetector(
                   onTap: (){
                     Navigator.push(
@@ -172,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen>{
                     ),
                   ),
                 ),
-                SizedBox(height: 40), // Add extra space at the bottom for keyboard
+                SizedBox(height: 40),  // Add extra space at the bottom for keyboard//had overflow error so implementing this
               ],
             )
           ),
