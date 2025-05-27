@@ -11,11 +11,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if(kIsWeb){
     await Firebase.initializeApp(
-      options: const FirebaseOptions(apiKey: 'AIzaSyDSFTi33sVczR0XwkDQoKBFiGaG8jzX61c',
-       appId: '1:390547022585:web:d57be919b440fc90aef828', 
-       messagingSenderId: '390547022585', 
-       projectId: 'utmhub-fb',
-       storageBucket:'utmhub-fb.firebasestorage.app', ),
+      options: const FirebaseOptions(apiKey: '',
+       appId: '', 
+       messagingSenderId: '', 
+       projectId: '',
+       storageBucket:'', ),
     );
 
   }
