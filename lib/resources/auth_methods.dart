@@ -114,9 +114,29 @@ class AuthMethods {
   Future<void> signOut() async {
     await _auth.signOut();
   }
-  
-  // Get current user
+    // Get current user
   User? getCurrentUser() {
     return _auth.currentUser;
+  }
+  
+  // Get user data from Firestore
+  Future<Map<String, dynamic>?> getUserData() async {
+    try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        DocumentSnapshot doc = await _firestore
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+        
+        if (doc.exists) {
+          return doc.data() as Map<String, dynamic>?;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error getting user data: $e');
+      return null;
+    }
   }
 }

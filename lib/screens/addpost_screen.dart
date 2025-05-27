@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:utmhub/widgets/text_field_input.dart';
+import 'package:utmhub/resources/auth_methods.dart';
 
 class AddPostPage extends StatefulWidget {
   const AddPostPage({super.key});
@@ -14,18 +14,32 @@ class _AddPostPageState extends State<AddPostPage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descController = TextEditingController();
   final TextEditingController tagsController = TextEditingController();
-
   Future<void> _submitPost() async {
     if (_formKey.currentState!.validate()) {
-      await FirebaseFirestore.instance.collection('posts').add({
-        'title': titleController.text,
-        'description': descController.text,
-        'tags': tagsController.text,
-        'createdAt': Timestamp.now(),
-      });
+      try {
+        // Get current user data
+        Map<String, dynamic>? userData = await AuthMethods().getUserData();
+        String authorName = userData?['username'] ?? 'Anonymous User';
+        String authorId = AuthMethods().getCurrentUser()?.uid ?? '';        await FirebaseFirestore.instance.collection('posts').add({
+          'title': titleController.text,
+          'description': descController.text,
+          'tags': tagsController.text,
+          'createdAt': Timestamp.now(),
+          'authorName': authorName,
+          'authorId': authorId,
+          'likes': [], // Initialize empty likes array
+        });
 
-      // Navigator.of(context).popUntil((route) => route.isFirst);
-      Navigator.pop(context);
+        // Navigator.of(context).popUntil((route) => route.isFirst);
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating post: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
