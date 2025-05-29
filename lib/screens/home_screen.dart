@@ -4,6 +4,8 @@ import 'package:utmhub/screens/addpost_screen.dart';
 import 'package:utmhub/screens/profilepage_screen.dart';
 import 'package:utmhub/screens/post_detail_screen.dart';
 import 'package:utmhub/resources/auth_methods.dart';
+import 'package:utmhub/screens/editpost_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -211,14 +213,33 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const Spacer(),
                             // Delete post button (only show to post author)
-                            if (data['authorId'] == AuthMethods().getCurrentUser()?.uid)
-                              IconButton(
-                                onPressed: () => _deletePost(postId),
-                                icon: const Icon(Icons.delete),
-                                iconSize: 20,
-                                color: Colors.red,
-                                tooltip: 'Delete Post',
-                              ),
+                            if (data['authorId'] == AuthMethods().getCurrentUser()?.uid) ...[
+                            IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                  builder: (context) => EditPostPage(
+                                    postId: postId,
+                                    postData: data,
+                                  ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.edit),
+                              iconSize: 20,
+                              color: Colors.orange,
+                              tooltip: 'Edit Post',
+                            ),
+                            IconButton(
+                              onPressed: () => _deletePost(postId),
+                              icon: const Icon(Icons.delete),
+                              iconSize: 20,
+                              color: Colors.red,
+                              tooltip: 'Delete Post',
+                            ),
+                          ],
+
                             if (createdAt != null)
                               Text(
                                 createdAt.toDate().toString().split(' ')[0],
