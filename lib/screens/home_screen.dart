@@ -25,6 +25,82 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+//Report post function
+Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
+  String? reason;
+  
+  await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Report Post'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Why are you reporting this post?'),
+            const SizedBox(height: 16),
+            DropdownButton<String>(
+              isExpanded: true,
+              hint: const Text('Select a reason'),
+              value: reason,
+              items: const [
+                'Inappropriate content',
+                'Spam',
+                'Harassment',
+                'Misinformation',
+                'Other'
+              ].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                reason = newValue;
+                (context as Element).markNeedsBuild();
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (reason != null) {
+                // Add report to Firestore
+                await FirebaseFirestore.instance.collection('reports').add({
+                  'postId': postId,
+                  'reportedBy': AuthMethods().getCurrentUser()?.uid,
+                  'reason': reason,
+                  'postTitle': postData['title'],
+                  'postAuthor': postData['authorName'],
+                  'createdAt': Timestamp.now(),
+                  'status': 'pending', // pending, reviewed, resolved
+                });
+
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Post reported successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Report'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
   Future<void> _likePost(String postId) async {
     try {
       String? currentUserId = AuthMethods().getCurrentUser()?.uid;
@@ -291,6 +367,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   const Spacer(),
+                                  // Report button for non-authors
+                                  if (data['authorId'] != AuthMethods().getCurrentUser()?.uid)
+                                    IconButton(
+                                      onPressed: () => _reportPost(postId, data),
+                                      icon: const Icon(Icons.flag_outlined),
+                                      iconSize: 20,
+                                      color: Colors.orange,
+                                      tooltip: 'Report Post',
+                                    ),
+                                  // Delete button for authors
                                   if (data['authorId'] == AuthMethods().getCurrentUser()?.uid)
                                     IconButton(
                                       onPressed: () => _deletePost(postId),
