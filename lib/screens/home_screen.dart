@@ -293,14 +293,34 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   const Spacer(),
-                                  if (data['authorId'] == AuthMethods().getCurrentUser()?.uid)
-                                    IconButton(
-                                      onPressed: () => _deletePost(postId),
-                                      icon: const Icon(Icons.delete),
-                                      iconSize: 20,
-                                      color: Colors.red,
-                                      tooltip: 'Delete Post',
-                                    ),
+
+                                  //Delete and Edit buttons
+                                  if (data['authorId'] == AuthMethods().getCurrentUser()?.uid) ...[
+                                  IconButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                        builder: (context) => EditPostPage(
+                                          postId: postId,
+                                          postData: data,
+                                        ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.edit),
+                                    iconSize: 20,
+                                    color: Colors.orange,
+                                    tooltip: 'Edit Post',
+                                  ),
+                                  IconButton(
+                                    onPressed: () => _deletePost(postId),
+                                    icon: const Icon(Icons.delete),
+                                    iconSize: 20,
+                                    color: Colors.red,
+                                    tooltip: 'Delete Post',
+                                  ),
+                                ],
                                   if (createdAt != null)
                                     Text(
                                       createdAt.toDate().toString().split(' ')[0],
