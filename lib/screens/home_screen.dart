@@ -5,6 +5,7 @@ import 'package:utmhub/screens/profilepage_screen.dart';
 import 'package:utmhub/screens/post_detail_screen.dart';
 import 'package:utmhub/resources/auth_methods.dart';
 import 'package:utmhub/widgets/search_bar.dart';
+import 'package:utmhub/utils/search_type.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -16,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  SearchType _searchType = SearchType.title;
 
   @override
   void dispose() {
@@ -139,6 +141,23 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  List<QueryDocumentSnapshot> _filterDocs(List<QueryDocumentSnapshot> docs) {
+    if (_searchQuery.isEmpty) return docs;
+    
+    return docs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final title = (data['title'] ?? '').toString().toLowerCase();
+      final tags = (data['tags'] ?? '').toString().toLowerCase();
+      
+      switch (_searchType) {
+        case SearchType.title:
+          return title.contains(_searchQuery.toLowerCase());
+        case SearchType.tags:
+          return tags.contains(_searchQuery.toLowerCase());
+      }
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,17 +176,51 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+
+      
       body: Column(
         children: [
-          // Search Bar
-          SearchBarWidget(
-            controller: _searchController, 
-            searchQuery: _searchQuery,
-            onChanged: (value) { 
-              setState(() {
-                _searchQuery = value.toLowerCase();
-              });
-            },
+          // Search Bar with Type Selector
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                DropdownButton<SearchType>(
+                  value: _searchType,
+                  items: SearchType.values.map((type) {
+                    return DropdownMenuItem(
+                      value: type,
+                      child: Text(type.toString().split('.').last),
+                    );
+                  }).toList(),
+                  onChanged: (SearchType? newValue) {
+                    if (newValue != null) {
+                      setState(() {
+                        _searchType = newValue;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
 
           Expanded(
@@ -179,17 +232,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
 
                 final docs = snapshot.data!.docs;
-                final filteredDocs = _searchQuery.isEmpty
-                    ? docs
-                    : docs.where((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        final title = (data['title'] ?? '').toString().toLowerCase();
-                        return title.contains(_searchQuery);
-                      }).toList();
+                final filteredDocs = _filterDocs(docs);
 
                 if (filteredDocs.isEmpty) {
                   return const Center(child: Text('No matching posts found.'));
                 }
+
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(12),
@@ -269,7 +317,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 4),
+                                      if (data['tags'] != null && data['tags'].toString().isNotEmpty) ...[
+                                        const SizedBox(height: 10),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(color: Colors.blue.withOpacity(0.5)),
+                                          ),
+                                          child: Text(
+                                            '${data['tags']}',
+                                            style: const TextStyle(
+                                              color: Colors.blue,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 20)
+                                      ],
                               Text(
                                 description,
                                 maxLines: 3,
