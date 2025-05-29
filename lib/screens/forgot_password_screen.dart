@@ -1,8 +1,7 @@
-//interface created, doesn't work, need to integrate fully with the firebase 
-
 import 'package:flutter/material.dart';
 import 'package:utmhub/widgets/text_field_input.dart';
-import 'package:utmhub/resources/auth_methods.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
@@ -38,23 +37,39 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       // Using AuthMethods to reset password
-      String res = await AuthMethods().resetPassword(
-        email: _emailController.text.trim(),
-      );
-      
-      setState(() {
-        _isLoading = false;
-        _message = res;
-        _isError = res != "Password reset link sent to your email";
-      });
-      
-      // Show message 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(res),
-          backgroundColor: _isError ? Colors.red : Colors.green,
-        ),
-      );
+
+      try {
+        await FirebaseAuth.instance
+            .sendPasswordResetEmail(email: _emailController.text.trim());
+
+        setState(() {
+          _isLoading = false;
+          _message = 'Password reset link sent to your email';
+          _isError = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset link sent to your email'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } on FirebaseAuthException catch (e) {
+        setState(() {
+          _isLoading = false;
+          _message = e.message ?? 'An error occurred';
+          _isError = true;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
+
     } catch (e) {
       setState(() {
         _isLoading = false;

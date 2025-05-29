@@ -11,11 +11,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if(kIsWeb){
     await Firebase.initializeApp(
-      options: const FirebaseOptions(apiKey: '',
-       appId: '', 
-       messagingSenderId: '', 
-       projectId: '',
-       storageBucket:'', ),
+      options: const FirebaseOptions(
+      apiKey: 'AIzaSyDSFTi33sVczR0XwkDQoKBFiGaG8jzX61c',
+      appId: '1:390547022585:android:01421a6880797489aef828', 
+      messagingSenderId: '390547022585', 
+      projectId: 'utmhub-fb',
+      storageBucket:'', ),
     );
 
   }
@@ -38,7 +39,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false, //hiding the debug icon
       title: 'UTMHub',
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: mobileBackgroundColor, //lets just use the custom colors, we kinda don't need the older stuff and it conflicts
+        scaffoldBackgroundColor: mobileBackgroundColor,
       ),
      // home: const ResponsiveLayout(webScreenlayout: WebScreenLayout(), mobileScreenLayout: MobileScreenLayout(),
      home: LoginScreen(),
