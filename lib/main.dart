@@ -1,50 +1,65 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:utmhub/responsive/mobile_screen_layout.dart';
-import 'package:utmhub/responsive/responsive_layout_screen.dart';
-import 'package:utmhub/responsive/web_screen_layout.dart';
-import 'package:utmhub/screens/login_screen.dart';
-import 'package:utmhub/utils/colors.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:utmhub/view/screens/login_screen.dart';
+import 'package:utmhub/core/utils/colors.dart';
+import 'package:utmhub/repository/post_repo.dart';
+import 'package:utmhub/repository/auth_repo.dart'; // Changed from auth_methods.dart
+import 'package:utmhub/viewmodels/post_viewmodel.dart';
+import 'package:utmhub/viewmodels/auth_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if(kIsWeb){
+  
+  // Initialize Firebase
+  if (kIsWeb) {
     await Firebase.initializeApp(
       options: const FirebaseOptions(
-      apiKey: 'AIzaSyDSFTi33sVczR0XwkDQoKBFiGaG8jzX61c',
-      appId: '1:390547022585:android:01421a6880797489aef828', 
-      messagingSenderId: '390547022585', 
-      projectId: 'utmhub-fb',
-      storageBucket:'', ),
+        apiKey: 'AIzaSyDSFTi33sVczR0XwkDQoKBFiGaG8jzX61c',
+        appId: '1:390547022585:android:01421a6880797489aef828', 
+        messagingSenderId: '390547022585', 
+        projectId: 'utmhub-fb',
+        storageBucket: '',
+      ),
     );
-
+  } else {
+    await Firebase.initializeApp();
   }
-  else{
-//if condition to check the platform we are on
-
-
-  await Firebase.initializeApp();//this is only for android app for now
-  }
-  runApp(const MyApp());
+  
+  // Initialize Repositories
+  final firestore = FirebaseFirestore.instance;
+  final postRepo = PostRepository(firestore);
+  final authRepo = AuthRepository(); // Only using AuthRepository now
+  
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => PostViewModel(postRepo, authRepo), // Changed to use authRepo
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AuthViewModel(authRepo), // Changed to use authRepo
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, //hiding the debug icon
+      debugShowCheckedModeBanner: false,
       title: 'UTMHub',
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: mobileBackgroundColor,
       ),
-     // home: const ResponsiveLayout(webScreenlayout: WebScreenLayout(), mobileScreenLayout: MobileScreenLayout(),
-     home: LoginScreen(),
-      );
-    //);
+      home: const LoginScreen(), // Added const
+    ); // Fixed syntax
   }
 }
-

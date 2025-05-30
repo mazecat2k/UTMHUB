@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:utmhub/resources/auth_methods.dart';
 import 'package:utmhub/widgets/text_field_input.dart';
-import 'package:utmhub/screens/login_screen.dart';
+import 'package:utmhub/view/screens/login_screen.dart';
 import 'package:flutter/src/painting/image_provider.dart';
 
 class SignupScreen extends StatefulWidget {
