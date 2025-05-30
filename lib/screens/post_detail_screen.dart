@@ -2,10 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:utmhub/resources/auth_methods.dart';
 
+
+//class+widget
 class PostDetailScreen extends StatefulWidget {
   final String postId;
   final Map<String, dynamic> postData;
 
+//constructor
   const PostDetailScreen({
     Key? key,
     required this.postId,
@@ -14,11 +17,13 @@ class PostDetailScreen extends StatefulWidget {
 
   @override
   State<PostDetailScreen> createState() => _PostDetailScreenState();
-}
+}//mutable state+instance of state class
 
+//mutable state, dynamic db/fb logic
 class _PostDetailScreenState extends State<PostDetailScreen> {
+  //text input new, reply and other stuff
   final TextEditingController _commentController = TextEditingController();  final TextEditingController _replyController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(); //for ensuring not empty comment
   final _replyFormKey = GlobalKey<FormState>();
   String? _replyingToCommentId;
 

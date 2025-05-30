@@ -6,6 +6,8 @@ import 'package:utmhub/screens/post_detail_screen.dart';
 import 'package:utmhub/resources/auth_methods.dart';
 import 'package:utmhub/widgets/search_bar.dart';
 import 'package:utmhub/utils/search_type.dart';
+import 'package:utmhub/screens/editpost_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -367,6 +369,7 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
                                     ),
                                   ),
                                   const Spacer(),
+
                                   // Report button for non-authors
                                   if (data['authorId'] != AuthMethods().getCurrentUser()?.uid)
                                     IconButton(
@@ -376,15 +379,35 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
                                       color: Colors.orange,
                                       tooltip: 'Report Post',
                                     ),
-                                  // Delete button for authors
-                                  if (data['authorId'] == AuthMethods().getCurrentUser()?.uid)
-                                    IconButton(
-                                      onPressed: () => _deletePost(postId),
-                                      icon: const Icon(Icons.delete),
-                                      iconSize: 20,
-                                      color: Colors.red,
-                                      tooltip: 'Delete Post',
-                                    ),
+                                  
+                                  //Delete and Edit buttons
+                                  if (data['authorId'] == AuthMethods().getCurrentUser()?.uid) ...[
+                                  IconButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                        builder: (context) => EditPostPage(
+                                          postId: postId,
+                                          postData: data,
+                                        ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.edit),
+                                    iconSize: 20,
+                                    color: Colors.orange,
+                                    tooltip: 'Edit Post',
+                                  ),
+                                  IconButton(
+                                    onPressed: () => _deletePost(postId),
+                                    icon: const Icon(Icons.delete),
+                                    iconSize: 20,
+                                    color: Colors.red,
+                                    tooltip: 'Delete Post',
+                                  ),
+                                ],
+
                                   if (createdAt != null)
                                     Text(
                                       createdAt.toDate().toString().split(' ')[0],
