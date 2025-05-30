@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:utmhub/widgets/text_field_input.dart';
+import 'package:utmhub/view/widgets/text_field_input.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 

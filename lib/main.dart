@@ -6,7 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:utmhub/view/screens/login_screen.dart';
 import 'package:utmhub/core/utils/colors.dart';
 import 'package:utmhub/repository/post_repo.dart';
-import 'package:utmhub/repository/auth_repo.dart'; // Changed from auth_methods.dart
+import 'package:utmhub/repository/auth_repo.dart';
 import 'package:utmhub/viewmodels/post_viewmodel.dart';
 import 'package:utmhub/viewmodels/auth_viewmodel.dart';
 
@@ -31,16 +31,16 @@ void main() async {
   // Initialize Repositories
   final firestore = FirebaseFirestore.instance;
   final postRepo = PostRepository(firestore);
-  final authRepo = AuthRepository(); // Only using AuthRepository now
+  final authRepo = AuthRepository(); 
   
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => PostViewModel(postRepo, authRepo), // Changed to use authRepo
+          create: (_) => PostViewModel(postRepo, authRepo),
         ),
         ChangeNotifierProvider(
-          create: (_) => AuthViewModel(authRepo), // Changed to use authRepo
+          create: (_) => AuthViewModel(authRepo),
         ),
       ],
       child: const MyApp(),
@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: mobileBackgroundColor,
       ),
-      home: const LoginScreen(), // Added const
-    ); // Fixed syntax
+      home: const LoginScreen(), 
+    );
   }
 }

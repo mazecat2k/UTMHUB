@@ -1,18 +1,28 @@
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
 import '../repository/post_repo.dart';
-import '../resources/auth_methods.dart';
-import '../utils/search_type.dart';
+import '../repository/auth_repo.dart';
+
+//enum for the search type
+enum SearchType {
+  title,
+  tags,
+} 
 
 class PostViewModel extends ChangeNotifier {
   final PostRepository _repository;
-  final AuthMethods _authMethods;
+  final AuthRepository _authRepo;
   String _searchQuery = '';
   SearchType _searchType = SearchType.title;
+  bool _isLoading = false;
+  String? _error;
+  
 
-  PostViewModel(this._repository, this._authMethods);
+  PostViewModel(this._repository, this._authRepo);
 
-  String? get currentUserId => _authMethods.getCurrentUser()?.uid;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  String? get currentUserId => _authRepo.getCurrentUser()?.uid;
   SearchType get searchType => _searchType;
   String get searchQuery => _searchQuery;
 
@@ -37,106 +47,53 @@ class PostViewModel extends ChangeNotifier {
             return post.title.toLowerCase().contains(query);
           case SearchType.tags:
             return post.tags.toLowerCase().contains(query);
-          case SearchType.description:
-            return post.description.toLowerCase().contains(query);
-          case SearchType.author:
-            return post.authorName.toLowerCase().contains(query);
         }
       }).toList();
     });
   }
 
   Future<void> deletePost(String postId) async {
+    _isLoading = false;
+    _error = null;
+    notifyListeners();
     try {
       await _repository.deletePost(postId);
+      _isLoading = false;
       notifyListeners();
     } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
       rethrow;
     }
   }
 
-  Future<void> likePost(String postId) async {
+  Future<bool> likePost(String postId) async {
+    if (currentUserId == null) {
+      _error = 'Not logged in, cannot like post';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
-      if (currentUserId == null) return;
       await _repository.likePost(postId, currentUserId!);
+      _isLoading = false;
       notifyListeners();
+      return true;
     } catch (e) {
-      rethrow;
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 
-  Future<void> reportPost({
-    required String postId,
-    required String reason,
-    required String postTitle,
-    required String postAuthor,
-  }) async {
-    try {
-      if (currentUserId == null) return;
-      await _repository.reportPost(
-        postId: postId,
-        reporterId: currentUserId!,
-        reason: reason,
-        postTitle: postTitle,
-        postAuthor: postAuthor,
-      );
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<void> showReportDialog(BuildContext context, String postId, Map<String, dynamic> postData) async {
-    String? reason;
-    
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Report Post'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Why are you reporting this post?'),
-            const SizedBox(height: 10),
-            TextFormField(
-              maxLines: 3,
-              onChanged: (value) => reason = value,
-              decoration: const InputDecoration(
-                hintText: 'Enter reason for reporting',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (reason != null && reason!.isNotEmpty) {
-                await reportPost(
-                  postId: postId,
-                  reason: reason!,
-                  postTitle: postData['title'],
-                  postAuthor: postData['authorName'],
-                );
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Post reported successfully'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              }
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Report'),
-          ),
-        ],
-      ),
-    );
+  void clearError() {
+    _error = null;
+    notifyListeners();
   }
 }

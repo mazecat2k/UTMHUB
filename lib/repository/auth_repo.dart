@@ -6,6 +6,7 @@ class AuthRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  //Sign up a new user
   Future<String> signUp({
     required String email,
     required String password,
@@ -27,7 +28,7 @@ class AuthRepository {
       return _handleAuthException(err);
     }
   }
-
+  //Sign in an existing user
   Future<String> signIn({
     required String email,
     required String password,
@@ -42,7 +43,7 @@ class AuthRepository {
       return _handleAuthException(err);
     }
   }
-
+  //Sign out the current user
   Future<void> signOut() => _auth.signOut();
   
   User? getCurrentUser() => _auth.currentUser;

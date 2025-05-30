@@ -50,23 +50,4 @@ class PostRepository {
 
       transaction.update(postRef, {'likes': likes});
     });
-  }
-
-  Future<void> reportPost({
-    required String postId,
-    required String reporterId,
-    required String reason,
-    required String postTitle,
-    required String postAuthor,
-  }) async {
-    await _firestore.collection('reports').add({
-      'postId': postId,
-      'reportedBy': reporterId,
-      'reason': reason,
-      'postTitle': postTitle,
-      'postAuthor': postAuthor,
-      'createdAt': Timestamp.now(),
-      'status': 'pending',
-    });
-  }
-}
+  }}

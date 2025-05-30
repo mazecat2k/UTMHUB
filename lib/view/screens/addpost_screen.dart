@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:utmhub/resources/auth_methods.dart';
+import 'package:utmhub/repository/post_repo.dart';
+import 'package:utmhub/repository/auth_repo.dart';
 
 class AddPostPage extends StatefulWidget {
   const AddPostPage({super.key});
@@ -14,6 +15,7 @@ class _AddPostPageState extends State<AddPostPage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descController = TextEditingController();
   final TextEditingController tagsController = TextEditingController();
+  
   Future<void> _submitPost() async {
     if (_formKey.currentState!.validate()) {
       try {

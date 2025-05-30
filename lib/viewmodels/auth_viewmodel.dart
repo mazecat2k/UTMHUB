@@ -24,7 +24,6 @@ class AuthViewModel extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
-
     try {
       final result = await _authRepository.signUp(
         email: email,
@@ -32,7 +31,6 @@ class AuthViewModel extends ChangeNotifier {
         username: username,
         bio: bio,
       );
-      
       if (result == "success") {
         await _loadUserData();
         return true;
@@ -52,7 +50,6 @@ class AuthViewModel extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
-
     try {
       final result = await _authRepository.signIn(
         email: email,
