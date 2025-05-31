@@ -7,6 +7,8 @@ import '../../models/post_model.dart';
 // ViewModels
 import '../../viewmodels/post_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../viewmodels/comment_viewmodel.dart';
+import '../../viewmodels/report_viewmodel.dart';
 
 // Views - Screens
 import '../screens/addpost_screen.dart';
@@ -27,8 +29,8 @@ class HomeScreen extends StatelessWidget {
 
 @override
 Widget build(BuildContext context) {
-  return Consumer2<PostViewModel, AuthViewModel>(
-    builder: (context, postVM, authVM, child) {
+  return Consumer3<PostViewModel, AuthViewModel, CommentViewModel>(
+    builder: (context, postVM, authVM, commentVM,child) {
       if (!authVM.isLoggedIn) {
         return const LoginScreen();
       }
@@ -156,21 +158,34 @@ Widget build(BuildContext context) {
     PostModel post,
     PostViewModel viewModel,
   ) {
-    return PostCard(
-      post: post,
-      onLike: () => viewModel.likePost(post.id),
-      onDelete: () => viewModel.deletePost(post.id),
-      onEdit: () => _navigateToEditPost(context, post),
-      onTap: () => _navigateToPostDetail(context, post),
-      onReport: () => showDialog(
+  return PostCard(
+    post: post,
+    onLike: () => viewModel.likePost(post.id),
+    onDelete: () => viewModel.deletePost(post.id),
+    onEdit: () => _navigateToEditPost(context, post),
+    onTap: () => _navigateToPostDetail(context, post),
+    onReport: () => showDialog(
       context: context,
-      builder: (context) => ReportDialog(
-        postId: post.id,
-        postData: post.toMap(),
+      builder: (context) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(
+            value: Provider.of<PostViewModel>(context, listen: false),
+          ),
+          ChangeNotifierProvider.value(
+            value: Provider.of<AuthViewModel>(context, listen: false),
+          ),
+          ChangeNotifierProvider.value(
+            value: Provider.of<ReportViewModel>(context, listen: false),
+          ),
+        ],
+        child: ReportDialog(
+          postId: post.id,
+          postData: post.toMap(),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _navigateToEditPost(BuildContext context, PostModel post) {
     Navigator.push(
@@ -188,13 +203,26 @@ Widget build(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PostDetailScreen(
+     builder: (context) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(
+            value: Provider.of<PostViewModel>(context, listen: false),
+          ),
+          ChangeNotifierProvider.value(
+            value: Provider.of<CommentViewModel>(context, listen: false),
+          ),
+          ChangeNotifierProvider.value(
+            value: Provider.of<AuthViewModel>(context, listen: false),
+          ),
+        ],
+        child: PostDetailScreen(
           postId: post.id,
-          postData: post.toMap(),
+          post: post,
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildAddPostButton(BuildContext context) {
     return FloatingActionButton(

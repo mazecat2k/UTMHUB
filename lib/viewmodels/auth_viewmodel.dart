@@ -43,7 +43,7 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> signIn({
+  Future<bool> logIn({
     required String email,
     required String password,
   }) async {
@@ -51,7 +51,7 @@ class AuthViewModel extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final result = await _authRepository.signIn(
+      final result = await _authRepository.logIn(
         email: email,
         password: password,
       );

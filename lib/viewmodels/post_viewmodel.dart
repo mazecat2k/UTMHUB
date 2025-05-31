@@ -92,6 +92,34 @@ class PostViewModel extends ChangeNotifier {
     }
   }
 
+Future<bool> createPost({
+  required String title,
+  required String description,
+  required String tags,
+}) async {
+  _isLoading = true;
+  _error = null;
+  notifyListeners();
+
+  try {
+    await _repository.createPost(
+      title: title,
+      description: description,
+      tags: tags,
+      authorId: currentUserId!,
+    );
+
+    _isLoading = false;
+    notifyListeners();
+    return true;
+  } catch (e) {
+    _error = e.toString();
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+}
+
   void clearError() {
     _error = null;
     notifyListeners();

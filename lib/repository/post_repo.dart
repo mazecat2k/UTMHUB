@@ -50,4 +50,31 @@ class PostRepository {
 
       transaction.update(postRef, {'likes': likes});
     });
-  }}
+  }
+
+    Future<void> createPost({
+    required String title,
+    required String description,
+    required String tags,
+    required String authorId,
+  }) async {
+    try {
+      // Get author data
+      final authorDoc = await _firestore.collection('users').doc(authorId).get();
+      final authorData = authorDoc.data();
+      
+      // Create post document
+      await _firestore.collection('posts').add({
+        'title': title,
+        'description': description,
+        'tags': tags,
+        'authorId': authorId,
+        'authorName': authorData?['username'] ?? 'Unknown User',
+        'likes': [],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to create post: ${e.toString()}');
+    }
+  }
+}

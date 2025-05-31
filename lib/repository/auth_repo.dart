@@ -29,7 +29,7 @@ class AuthRepository {
     }
   }
   //Sign in an existing user
-  Future<String> signIn({
+  Future<String> logIn({
     required String email,
     required String password,
   }) async {
