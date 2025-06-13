@@ -7,6 +7,7 @@ import 'package:utmhub/resources/auth_methods.dart';
 import 'package:utmhub/widgets/search_bar.dart';
 import 'package:utmhub/utils/search_type.dart';
 import 'package:utmhub/screens/editpost_screen.dart';
+import 'package:utmhub/screens/notification_screen.dart'; // Import NotificationScreen
 
 
 class HomeScreen extends StatefulWidget {
@@ -238,11 +239,70 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId = AuthMethods().getCurrentUser()?.uid;
     return Scaffold(
       appBar: AppBar(
         title: const Text('UTM Hub'),
         backgroundColor: const Color.fromRGBO(224, 167, 34, 1),
         actions: [
+          // Notification Icon with Badge
+          StreamBuilder<QuerySnapshot>(
+            stream: currentUserId == null
+                ? null
+                : FirebaseFirestore.instance
+                    .collection('notifications')
+                    .where('recipientId', isEqualTo: currentUserId)
+                    .where('isRead', isEqualTo: false)
+                    .snapshots(),
+            builder: (context, snapshot) {
+              int unreadCount = 0;
+              if (snapshot.hasData) {
+                unreadCount = snapshot.data!.docs.length;
+              }
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications),
+                    tooltip: 'Notifications',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Center(
+                          child: Text(
+                            unreadCount > 99 ? '99+' : unreadCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           IconButton(
             icon: const Text('👤', style: TextStyle(fontSize: 24)),
             onPressed: () {
