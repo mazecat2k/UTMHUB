@@ -41,13 +41,14 @@ class PostCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.person, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.person, size: 12, color: Colors.grey[600]),
                   const SizedBox(width: 8),
                   Text(
                     post.authorName,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 12,
                       color: Colors.grey[600],
                       fontWeight: FontWeight.w500,
                     ),
@@ -86,19 +87,19 @@ class PostCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 5),
               Text(
                 post.title,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 25,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               if (post.tags.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 5),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                    horizontal: 13,
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
