@@ -25,19 +25,24 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final TextEditingController _commentController = TextEditingController();  final TextEditingController _replyController = TextEditingController();
   final _formKey = GlobalKey<FormState>(); //for ensuring not empty comment
   final _replyFormKey = GlobalKey<FormState>();
-  String? _replyingToCommentId;
+  String? _replyingToCommentId;//null=no comment to reply
 
   @override
+  //to hide the detail screen
   void dispose() {
+    //was causing mem leak, fixed using these
     _commentController.dispose();
     _replyController.dispose();
     super.dispose();
   }
+
+  //fb integration, handles liking and stuff
   Future<void> _likePost() async {
     try {
+      //current userId
       String? currentUserId = AuthMethods().getCurrentUser()?.uid;
       if (currentUserId == null) return;
-
+//make sure all runs or none
       DocumentReference postRef = FirebaseFirestore.instance
           .collection('posts')
           .doc(widget.postId);

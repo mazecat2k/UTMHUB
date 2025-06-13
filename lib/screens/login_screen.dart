@@ -5,6 +5,7 @@ import 'package:utmhub/screens/signup_screen.dart';
 import 'package:utmhub/screens/home_screen.dart';
 import 'package:utmhub/resources/auth_methods.dart';
 import 'package:utmhub/screens/forgot_password_screen.dart';
+import 'package:utmhub/screens/admin_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -25,41 +26,61 @@ class _LoginScreenState extends State<LoginScreen>{
     super.dispose();
     _emailController.dispose();
     _passwordController.dispose();//to dispose after using 
-  }
-  
+  }  // Enhanced login function with admin credential checking
   void loginUser() async {
+    // Set loading state and clear any previous error messages
     setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-      _isError = false;
+      _isLoading = true; // Show loading spinner on login button
+      _errorMessage = ''; // Clear any previous error messages
+      _isError = false; // Reset error state
     });
 
-    // Login user
+    // Check for hardcoded admin credentials before attempting Firebase authentication
+    // This allows admin access without needing a Firebase user account
+    if (_emailController.text == "basil22@gmail.com" && 
+        _passwordController.text == "Basil22!!") {
+      // Stop loading state since we're not calling Firebase
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // Navigate directly to admin dashboard instead of home screen
+      // pushReplacement removes login screen from navigation stack
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const AdminDashboard()),
+      );
+      return; // Exit function early to prevent normal login flow
+    }
+
+    // Normal user login flow using Firebase Authentication
     String res = await AuthMethods().logInUser(
       email: _emailController.text,
       password: _passwordController.text,
     );
 
+    // Stop loading state after Firebase response
     setState(() {
       _isLoading = false;
     });
 
+    // Check if login was successful
     if (res == "success") {
-      // Navigate to the home screen
+      // Navigate to the home screen for regular users
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } else {
+      // Handle login errors by updating UI state
       setState(() {
-        _errorMessage = res;
-        _isError = true;
+        _errorMessage = res; // Set error message from Firebase
+        _isError = true; // Mark as error state for UI styling
       });
 
-      // Show error message
+      // Show error message as a snackbar for user feedback
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res),
-          backgroundColor: Colors.red,
+          content: Text(res), // Display the actual error message
+          backgroundColor: Colors.red, // Red background for error indication
         ),
       );
     }

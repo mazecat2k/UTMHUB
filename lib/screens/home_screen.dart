@@ -69,26 +69,26 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-          TextButton(
-            onPressed: () async {
+          TextButton(            onPressed: () async {
               if (reason != null) {
-                // Add report to Firestore
+                // Add report to Firestore with comprehensive data for admin review
                 await FirebaseFirestore.instance.collection('reports').add({
-                  'postId': postId,
-                  'reportedBy': AuthMethods().getCurrentUser()?.uid,
-                  'reason': reason,
-                  'postTitle': postData['title'],
-                  'postAuthor': postData['authorName'],
-                  'createdAt': Timestamp.now(),
-                  'status': 'pending', // pending, reviewed, resolved
+                  'postId': postId, // ID of the reported post for admin reference
+                  'reportedBy': AuthMethods().getCurrentUser()?.uid, // User who made the report
+                  'reason': reason, // Selected reason for reporting
+                  'postData': postData, // Store the entire post data for admin to see context
+                  'timestamp': Timestamp.now(), // When the report was made (matches admin dashboard)
+                  'status': 'pending', // Report status for future workflow (pending, reviewed, resolved)
                 });
 
+                // Close dialog and show success message if widget is still mounted
                 if (mounted) {
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // Close the report dialog
+                  // Show confirmation snackbar to user
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Post reported successfully'),
-                      backgroundColor: Colors.green,
+                      backgroundColor: Colors.green, // Green for success
                     ),
                   );
                 }
