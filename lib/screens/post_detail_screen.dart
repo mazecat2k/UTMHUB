@@ -23,9 +23,13 @@ class PostDetailScreen extends StatefulWidget {
 class _PostDetailScreenState extends State<PostDetailScreen> {
   //text input new, reply and other stuff
   final TextEditingController _commentController = TextEditingController();  final TextEditingController _replyController = TextEditingController();
+  final TextEditingController _editCommentController = TextEditingController();
+  final TextEditingController _editReplyController = TextEditingController();
   final _formKey = GlobalKey<FormState>(); //for ensuring not empty comment
   final _replyFormKey = GlobalKey<FormState>();
   String? _replyingToCommentId;//null=no comment to reply
+  String? _editingCommentId;
+  String? _editingReplyId;
 
   @override
   //to hide the detail screen
@@ -33,6 +37,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     //was causing mem leak, fixed using these
     _commentController.dispose();
     _replyController.dispose();
+    _editCommentController.dispose();
+    _editReplyController.dispose();
     super.dispose();
   }
 
@@ -92,6 +98,29 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           'authorId': authorId,
           'likes': [], // Initialize empty likes array
         });
+
+        // Notification logic: Notify post author if not commenting on own post
+        final postSnap = await FirebaseFirestore.instance.collection('posts').doc(widget.postId).get();
+        if (postSnap.exists) {
+          final postData = postSnap.data() as Map<String, dynamic>;
+          final postAuthorId = postData['authorId'];
+          if (postAuthorId != null && postAuthorId != authorId) {
+            try {
+              await FirebaseFirestore.instance.collection('notifications').add({
+                'recipientId': postAuthorId,
+                'postId': widget.postId,
+                'commentAuthorId': authorId,
+                'commentText': _commentController.text,
+                'postTitle': postData['title'] ?? '',
+                'timestamp': Timestamp.now(),
+                'isRead': false,
+              });
+              print('Notification created for recipientId (comment): ' + postAuthorId);
+            } catch (e) {
+              print('Error creating notification (comment): ' + e.toString());
+            }
+          }
+        }
 
         _commentController.clear();
         
@@ -157,6 +186,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         String authorName = userData?['username'] ?? 'Anonymous User';
         String authorId = AuthMethods().getCurrentUser()?.uid ?? '';
 
+        // Add reply to Firestore
         await FirebaseFirestore.instance
             .collection('posts')
             .doc(widget.postId)
@@ -169,11 +199,35 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           'author': authorName,
           'authorId': authorId,
           'parentCommentId': parentCommentId,
-        });        _replyController.clear();
+        });
+
+        // Notification logic: Notify post author if not replying to own post
+        final postSnap = await FirebaseFirestore.instance.collection('posts').doc(widget.postId).get();
+        if (postSnap.exists) {
+          final postData = postSnap.data() as Map<String, dynamic>;
+          final postAuthorId = postData['authorId'];
+          if (postAuthorId != null && postAuthorId != authorId) {
+            try {
+              await FirebaseFirestore.instance.collection('notifications').add({
+                'recipientId': postAuthorId,
+                'postId': widget.postId,
+                'replyAuthorId': authorId,
+                'replyText': _replyController.text,
+                'timestamp': Timestamp.now(),
+                'isRead': false,
+              });
+              print('Notification created for recipientId: ' + postAuthorId);
+            } catch (e) {
+              print('Error creating notification: ' + e.toString());
+            }
+            // Show in-app popup for the recipient if they are online (optional, handled by NotificationScreen)
+          }
+        }
+
+        _replyController.clear();
         setState(() {
           _replyingToCommentId = null;
         });
-        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Reply added successfully!'),
@@ -392,6 +446,62 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _editComment(String commentId, String newText) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.postId)
+          .collection('comments')
+          .doc(commentId)
+          .update({'text': newText});
+      setState(() {
+        _editingCommentId = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Comment updated!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error editing comment: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _editReply(String commentId, String replyId, String newText) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.postId)
+          .collection('comments')
+          .doc(commentId)
+          .collection('replies')
+          .doc(replyId)
+          .update({'text': newText});
+      setState(() {
+        _editingReplyId = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Reply updated!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error editing reply: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -620,8 +730,20 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                         ),
                                       ),
                                       const Spacer(),
-                                      // Delete comment button (only show to comment author)
-                                      if (commentData['authorId'] == AuthMethods().getCurrentUser()?.uid)
+                                      // Edit and Delete comment buttons (only show to comment author)
+                                      if (commentData['authorId'] == AuthMethods().getCurrentUser()?.uid) ...[
+                                        IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _editingCommentId = comments[index].id;
+                                              _editCommentController.text = commentText;
+                                            });
+                                          },
+                                          icon: const Icon(Icons.edit),
+                                          iconSize: 16,
+                                          color: Colors.orange,
+                                          tooltip: 'Edit Comment',
+                                        ),
                                         IconButton(
                                           onPressed: () => _deleteComment(comments[index].id),
                                           icon: const Icon(Icons.delete),
@@ -629,6 +751,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                           color: Colors.red,
                                           tooltip: 'Delete Comment',
                                         ),
+                                      ],
                                       if (commentTime != null)
                                         Text(
                                           commentTime.toDate().toString().split('.')[0],
@@ -640,10 +763,45 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  Text(
-                                    commentText,
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
+                                  if (_editingCommentId == comments[index].id)
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller: _editCommentController,
+                                            autofocus: true,
+                                            decoration: const InputDecoration(
+                                              hintText: 'Edit your comment...',
+                                              border: OutlineInputBorder(),
+                                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            ),
+                                            maxLines: null,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.check, color: Colors.green),
+                                          onPressed: () {
+                                            final newText = _editCommentController.text.trim();
+                                            if (newText.isNotEmpty) {
+                                              _editComment(comments[index].id, newText);
+                                            }
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.close, color: Colors.red),
+                                          onPressed: () {
+                                            setState(() {
+                                              _editingCommentId = null;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    )
+                                  else
+                                    Text(
+                                      commentText,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
                                   const SizedBox(height: 8),
                                   // Like button
                                   Row(
@@ -807,8 +965,22 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                                               ),
                                                             ),
                                                             const Spacer(),
-                                                            // Delete reply button (only show to reply author)
-                                                            if (replyData['authorId'] == AuthMethods().getCurrentUser()?.uid)
+                                                            // Edit and Delete reply buttons (only show to reply author)
+                                                            if (replyData['authorId'] == AuthMethods().getCurrentUser()?.uid) ...[
+                                                              IconButton(
+                                                                onPressed: () {
+                                                                  setState(() {
+                                                                    _editingReplyId = reply.id;
+                                                                    _editReplyController.text = replyText;
+                                                                  });
+                                                                },
+                                                                icon: const Icon(Icons.edit),
+                                                                iconSize: 14,
+                                                                color: Colors.orange,
+                                                                tooltip: 'Edit Reply',
+                                                                padding: EdgeInsets.zero,
+                                                                constraints: BoxConstraints(),
+                                                              ),
                                                               IconButton(
                                                                 onPressed: () => _deleteReply(comments[index].id, reply.id),
                                                                 icon: const Icon(Icons.delete),
@@ -816,8 +988,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                                                 color: Colors.red,
                                                                 tooltip: 'Delete Reply',
                                                                 padding: EdgeInsets.zero,
-                                                                constraints: const BoxConstraints(),
+                                                                constraints: BoxConstraints(),
                                                               ),
+                                                            ],
                                                             if (replyTime != null)
                                                               Text(
                                                                 replyTime.toDate().toString().split('.')[0],
@@ -829,10 +1002,45 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                                           ],
                                                         ),
                                                         const SizedBox(height: 6),
-                                                        Text(
-                                                          replyText,
-                                                          style: const TextStyle(fontSize: 13),
-                                                        ),
+                                                        if (_editingReplyId == reply.id)
+                                                          Row(
+                                                            children: [
+                                                              Expanded(
+                                                                child: TextFormField(
+                                                                  controller: _editReplyController,
+                                                                  autofocus: true,
+                                                                  decoration: const InputDecoration(
+                                                                    hintText: 'Edit your reply...',
+                                                                    border: OutlineInputBorder(),
+                                                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                                  ),
+                                                                  maxLines: null,
+                                                                ),
+                                                              ),
+                                                              IconButton(
+                                                                icon: const Icon(Icons.check, color: Colors.green),
+                                                                onPressed: () {
+                                                                  final newText = _editReplyController.text.trim();
+                                                                  if (newText.isNotEmpty) {
+                                                                    _editReply(comments[index].id, reply.id, newText);
+                                                                  }
+                                                                },
+                                                              ),
+                                                              IconButton(
+                                                                icon: const Icon(Icons.close, color: Colors.red),
+                                                                onPressed: () {
+                                                                  setState(() {
+                                                                    _editingReplyId = null;
+                                                                  });
+                                                                },
+                                                              ),
+                                                            ],
+                                                          )
+                                                        else
+                                                          Text(
+                                                            replyText,
+                                                            style: const TextStyle(fontSize: 13),
+                                                          ),
                                                       ],
                                                     ),
                                                   );
