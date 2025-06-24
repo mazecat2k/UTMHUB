@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // For accessing Firestore database
 import 'package:utmhub/screens/login_screen.dart'; // For logout navigation
+import 'package:utmhub/screens/revenue_analytics_screen.dart'; // Import Revenue Analytics Screen
+import 'package:utmhub/screens/ad_config_screen.dart'; // Import Ad Config Screen
 
 // AdminDashboard is a StatefulWidget because it manages dynamic state (loading, data updates)
 class AdminDashboard extends StatefulWidget {
@@ -81,7 +83,135 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ],
             ),
           ),
-          const SizedBox(height: 20), // Spacing between header and content          // Reports section - main content area
+          const SizedBox(height: 20), // Spacing between header and content
+          
+          // Admin Navigation Cards
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Card(
+                        color: const Color.fromARGB(255, 37, 37, 37),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RevenueAnalyticsScreen(),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.analytics,
+                                  size: 40,
+                                  color: Color.fromRGBO(224, 167, 34, 1),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Revenue Analytics',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Card(
+                        color: const Color.fromARGB(255, 37, 37, 37),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AdConfigScreen(),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.settings,
+                                  size: 40,
+                                  color: Colors.blue,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Ad Configuration',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  color: const Color.fromARGB(255, 37, 37, 37),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.report,
+                          size: 40,
+                          color: Colors.red,
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          'Reported Posts Management',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          // Reports section - main content area
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16), // Side margins

@@ -6,9 +6,12 @@ import 'package:utmhub/responsive/web_screen_layout.dart';
 import 'package:utmhub/screens/login_screen.dart';
 import 'package:utmhub/utils/colors.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:utmhub/utils/ad_manager.dart'; // Import AdManager
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase first
   if(kIsWeb){
     await Firebase.initializeApp(
       options: const FirebaseOptions(
@@ -18,14 +21,15 @@ void main() async {
       projectId: 'utmhub-fb',
       storageBucket:'', ),
     );
-
   }
   else{
-//if condition to check the platform we are on
-
-
-  await Firebase.initializeApp();//this is only for android app for now
+    // if condition to check the platform we are on
+    await Firebase.initializeApp(); // this is only for android app for now
   }
+  
+  // Initialize AdMob after Firebase
+  await AdManager.initialize();
+  
   runApp(const MyApp());
 }
 

@@ -4,6 +4,11 @@ package="com.example.utmhub">
         android:label="utmhub"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+          <!-- AdMob Configuration -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-8384063836870954~4061266951"/> <!-- UTMHUB Real App ID -->
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"
