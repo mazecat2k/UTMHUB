@@ -467,6 +467,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                             foregroundColor: Colors.white, // White text for contrast
                                           ),
                                         ),
+                                        // Ban user button
+                                        ElevatedButton.icon(
+                                          onPressed: () => _banUser(reportData['postData']?['authorId']),
+                                          icon: const Icon(Icons.block, size: 16),
+                                          label: const Text('Ban User'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.orange, // Orange for ban action
+                                            foregroundColor: Colors.white,
+                                          ),
+                                        ),
+                                        // Delete user button
+                                        ElevatedButton.icon(
+                                          onPressed: () => _deleteUser(reportData['postData']?['authorId']),
+                                          icon: const Icon(Icons.person_remove, size: 16),
+                                          label: const Text('Delete User'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.purple, // Purple for delete user
+                                            foregroundColor: Colors.white,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ],
@@ -574,6 +594,49 @@ class _AdminDashboardState extends State<AdminDashboard> {
       );
     }
   }
+
+  // Function to ban a user (set banned flag in user document)
+  Future<void> _banUser(String? userId) async {
+    if (userId == null) return;
+    try {
+      await _firestore.collection('users').doc(userId).update({'banned': true});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User has been banned.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error banning user: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Function to delete a user (remove user document from Firestore)
+  Future<void> _deleteUser(String? userId) async {
+    if (userId == null) return;
+    try {
+      await _firestore.collection('users').doc(userId).delete();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User account deleted.'),
+          backgroundColor: Colors.purple,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting user: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   // Function to show logout confirmation dialog
   void _showLogoutDialog() {
     showDialog(
