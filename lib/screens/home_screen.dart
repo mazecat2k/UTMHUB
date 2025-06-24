@@ -8,6 +8,9 @@ import 'package:utmhub/widgets/search_bar.dart';
 import 'package:utmhub/utils/search_type.dart';
 import 'package:utmhub/screens/editpost_screen.dart';
 import 'package:utmhub/screens/notification_screen.dart'; // Import NotificationScreen
+import 'package:utmhub/widgets/banner_ad_widget.dart'; // Import Banner Ad Widget
+import 'package:utmhub/utils/ad_manager.dart'; // Import Ad Manager
+import 'dart:math'; // For random ad display
 
 
 class HomeScreen extends StatefulWidget {
@@ -21,6 +24,16 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   SearchType _searchType = SearchType.title;
+  final AdManager _adManager = AdManager();
+  
+  @override
+  void initState() {
+    super.initState();
+    // Load ads when screen initializes
+    _adManager.loadBannerAd();
+    _adManager.loadInterstitialAd();
+    _adManager.loadRewardedAd();
+  }
 
   @override
   void dispose() {
@@ -400,6 +413,11 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () {
+                          // Show interstitial ad occasionally (1 in 3 times)
+                          if (Random().nextInt(3) == 0) {
+                            _adManager.showInterstitialAd();
+                          }
+                          
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -536,6 +554,11 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
                                   Expanded(
                                     child: ElevatedButton.icon(
                                       onPressed: () {
+                                        // Show interstitial ad occasionally (1 in 4 times for comment button)
+                                        if (Random().nextInt(4) == 0) {
+                                          _adManager.showInterstitialAd();
+                                        }
+                                        
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -568,6 +591,7 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
           ),
         ],
       ),
+      bottomNavigationBar: const BannerAdWidget(), // Add banner ad at bottom
       floatingActionButton: PopupMenuButton<String>(
         icon: const Icon(Icons.add),
         onSelected: (value) {
