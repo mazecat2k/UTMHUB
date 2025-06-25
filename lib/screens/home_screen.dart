@@ -10,6 +10,9 @@ import 'package:utmhub/screens/editpost_screen.dart';
 import 'package:utmhub/screens/notification_screen.dart'; // Import NotificationScreen
 import 'package:utmhub/widgets/banner_ad_widget.dart'; // Import Banner Ad Widget
 import 'package:utmhub/utils/ad_manager.dart'; // Import Ad Manager
+import 'package:utmhub/services/ban_service.dart'; // Import Ban Service
+import 'package:utmhub/screens/login_screen.dart'; // Import Login Screen
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 import 'dart:math'; // For random ad display
 
 
@@ -33,6 +36,56 @@ class _HomeScreenState extends State<HomeScreen> {
     _adManager.loadBannerAd();
     _adManager.loadInterstitialAd();
     _adManager.loadRewardedAd();
+    
+    // Check if user is banned when entering home screen
+    _checkUserBanStatus();
+  }
+  
+  // Method to check if the current user is banned
+  Future<void> _checkUserBanStatus() async {
+    final banStatus = await BanService.checkCurrentUserBanStatus();
+    
+    if (banStatus['isBanned'] == true && mounted) {
+      // User is banned, sign them out and redirect to login
+      await FirebaseAuth.instance.signOut();
+      
+      String banMessage;
+      if (banStatus['isPermanent'] == true) {
+        banMessage = 'Your account has been permanently suspended.\n\nReason: ${banStatus['banReason']}';
+      } else {
+        final timeRemaining = BanService.formatBanTimeRemaining(banStatus['remainingMinutes'] ?? 0);
+        banMessage = 'Your account is temporarily suspended.\n\nReason: ${banStatus['banReason']}\nTime remaining: $timeRemaining';
+      }
+      
+      // Show ban message dialog and redirect to login
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text(
+            'Account Suspended',
+            style: TextStyle(
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(banMessage),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navigate back to login screen
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
