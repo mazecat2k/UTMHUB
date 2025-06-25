@@ -255,8 +255,9 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
     final currentUserId = AuthMethods().getCurrentUser()?.uid;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('UTM Hub'),
+        title: const Text('UTM Hub', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color.fromRGBO(224, 167, 34, 1),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           // Notification Icon with Badge
           StreamBuilder<QuerySnapshot>(
@@ -275,7 +276,7 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
               return Stack(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.notifications),
+                    icon: const Icon(Icons.notifications, color: Colors.white),
                     tooltip: 'Notifications',
                     onPressed: () {
                       Navigator.push(
@@ -317,7 +318,7 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
             },
           ),
           IconButton(
-            icon: const Text('👤', style: TextStyle(fontSize: 24)),
+            icon: const Icon(Icons.person, size: 30, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
