@@ -536,6 +536,11 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               keyboardType: TextInputType.emailAddress,
             ),
+            const SizedBox(height: 12),
+            const Text(
+              'Note: You may need to verify your new email address after the change.',
+              style: TextStyle(fontSize: 12, color: Colors.orange),
+            ),
           ],
         ),
         actions: [
@@ -561,17 +566,20 @@ class _ProfilePageState extends State<ProfilePage> {
                   password: currentPasswordController.text,
                 );
 
+                // Re-authenticate first
                 await _currentUser!.reauthenticateWithCredential(credential);
-                await _currentUser!.updateEmail(newEmailController.text);
+                
+                // Try to update email
+                await _currentUser!.verifyBeforeUpdateEmail(newEmailController.text);
 
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Email updated successfully'),
+                    content: Text('Verification email sent! Check your new email to complete the change.'),
                     backgroundColor: Colors.green,
+                    duration: Duration(seconds: 5),
                   ),
                 );
-                setState(() {}); // Refresh UI
               } on FirebaseAuthException catch (e) {
                 String errorMessage;
                 switch (e.code) {
@@ -584,18 +592,31 @@ class _ProfilePageState extends State<ProfilePage> {
                   case 'email-already-in-use':
                     errorMessage = 'Email is already in use';
                     break;
+                  case 'operation-not-allowed':
+                    errorMessage = 'Email change not allowed. Please contact support.';
+                    break;
+                  case 'requires-recent-login':
+                    errorMessage = 'Please log out and log back in, then try again.';
+                    break;
                   default:
                     errorMessage = 'Error: ${e.message}';
                 }
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
                 );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Unexpected error: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color.fromRGBO(224, 167, 34, 1),
             ),
-            child: const Text('Save', style: TextStyle(color: Colors.white)),
+            child: const Text('Send Verification', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
