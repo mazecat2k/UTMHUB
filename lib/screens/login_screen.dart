@@ -6,6 +6,8 @@ import 'package:utmhub/screens/home_screen.dart';
 import 'package:utmhub/resources/auth_methods.dart';
 import 'package:utmhub/screens/forgot_password_screen.dart';
 import 'package:utmhub/screens/admin_dashboard.dart';
+import 'package:utmhub/services/ban_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -65,7 +67,55 @@ class _LoginScreenState extends State<LoginScreen>{
 
     // Check if login was successful
     if (res == "success") {
-      // Navigate to the home screen for regular users
+      // Check if the user is banned before proceeding to home screen
+      final banStatus = await BanService.checkCurrentUserBanStatus();
+      
+      if (banStatus['isBanned'] == true) {
+        // User is banned, show appropriate message and sign them out
+        await FirebaseAuth.instance.signOut();
+        
+        String banMessage;
+        if (banStatus['isPermanent'] == true) {
+          banMessage = 'Your account has been permanently suspended.\n\nReason: ${banStatus['banReason']}';
+        } else {
+          final timeRemaining = BanService.formatBanTimeRemaining(banStatus['remainingMinutes'] ?? 0);
+          banMessage = 'Your account is temporarily suspended.\n\nReason: ${banStatus['banReason']}\nTime remaining: $timeRemaining';
+        }
+        
+        // Show ban message dialog
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: const Text(
+                'Account Suspended',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Text(banMessage),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+        
+        // Set error state for UI feedback
+        setState(() {
+          _errorMessage = 'Account suspended';
+          _isError = true;
+        });
+        
+        return; // Exit function without navigating to home screen
+      }
+      
+      // User is not banned, navigate to the home screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );

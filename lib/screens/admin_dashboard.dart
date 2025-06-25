@@ -16,6 +16,51 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   // Create a Firestore instance to interact with the database
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Function to ban a user for 10 minutes
+  Future<void> _banUser(String? userId, String? username) async {
+    if (userId == null) return;
+    
+    try {
+      final banUntil = DateTime.now().add(const Duration(minutes: 10));
+      
+      await _firestore.collection('users').doc(userId).update({
+        'isBanned': true,
+        'banUntil': Timestamp.fromDate(banUntil),
+        'banReason': 'Content violation - reported post',
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('User ${username ?? 'Unknown'} banned for 10 minutes'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error banning user: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Function to get user data by ID
+  Future<Map<String, dynamic>?> _getUserData(String userId) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      return userDoc.exists ? userDoc.data() : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -290,181 +335,288 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             Map<String, dynamic> reportData = 
                                 report.data() as Map<String, dynamic>;
 
+                            // Get post and user data
+                            final postData = reportData['postData'] as Map<String, dynamic>?;
+                            final postAuthorId = postData?['authorId'] as String?;
+                            final authorName = postData?['authorName'] ?? postData?['username'] ?? 'Unknown User';
+
                             // Return a card widget for each report
                             return Card(
-                              margin: const EdgeInsets.only(bottom: 12), // Space between cards
-                              color: const Color.fromARGB(255, 37, 37, 37), // Dark card background
+                              margin: const EdgeInsets.only(bottom: 16), // More space between cards
+                              color: const Color.fromARGB(255, 45, 45, 45), // Slightly lighter dark background
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12), // Rounded corners
+                                borderRadius: BorderRadius.circular(16), // More rounded corners
                               ),
+                              elevation: 4, // Add shadow for depth
                               child: Padding(
-                                padding: const EdgeInsets.all(16), // Internal card padding
+                                padding: const EdgeInsets.all(20), // More padding for better spacing
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start, // Left-align content
                                   children: [
-                                    // Report header with ID and delete button
-                                    Row(
-                                      children: [
-                                        // Report icon for visual identification
-                                        const Icon(
-                                          Icons.report,
-                                          color: Colors.red, // Red for warning/danger
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8), // Spacing
-                                        // Report ID display (expandable to take remaining space)
-                                        Expanded(
-                                          child: Text(
-                                            'Report ID: ${report.id}', // Show Firestore document ID
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold, // Bold for emphasis
-                                              color: Colors.white, // White text
+                                    // Enhanced report header
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.report_problem,
+                                            color: Colors.red,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Report #${report.id.substring(0, 8)}...', // Shorter ID display
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.red,
+                                              ),
                                             ),
                                           ),
+                                          IconButton(
+                                            onPressed: () => _deleteReport(report.id),
+                                            icon: const Icon(
+                                              Icons.close,
+                                              color: Colors.red,
+                                              size: 18,
+                                            ),
+                                            tooltip: 'Delete Report',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    
+                                    // Report reason with better styling
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.warning_amber, color: Colors.orange, size: 16),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          'Reason:',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
                                         ),
-                                        // Delete report button
-                                        IconButton(
-                                          onPressed: () => _deleteReport(report.id), // Call delete function
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.red, // Red delete icon
-                                            size: 20,
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.orange.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              reportData['reason'] ?? 'No reason provided',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.orange,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 8), // Spacing                                    
-                                    // Reason for report with styled container
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, // Horizontal padding for pill shape
-                                        vertical: 6, // Vertical padding for height
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.withOpacity(0.2), // Semi-transparent red background
-                                        borderRadius: BorderRadius.circular(20), // Pill-shaped container
-                                      ),
-                                      child: Text(
-                                        'Reason: ${reportData['reason'] ?? 'No reason provided'}', // Show reason or fallback
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.red, // Red text to match background theme
-                                          fontWeight: FontWeight.bold, // Bold for emphasis
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12), // Spacing
+                                    const SizedBox(height: 16),
                                     
-                                    // Post details section in a styled container
+                                    // Enhanced post details section
                                     Container(
-                                      padding: const EdgeInsets.all(12), // Internal padding
+                                      padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: Colors.black26, // Dark background for contrast
-                                        borderRadius: BorderRadius.circular(8), // Rounded corners
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.black26,
+                                            Colors.black12,
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          // Section title
-                                          Text(
-                                            'Reported Post:',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold, // Bold section title
-                                              color: Colors.white, // White text
-                                            ),
+                                          // Section header
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.article_outlined, color: Color.fromRGBO(224, 167, 34, 1), size: 20),
+                                              const SizedBox(width: 8),
+                                              const Text(
+                                                'Reported Post Details',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color.fromRGBO(224, 167, 34, 1),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(height: 8), // Spacing
-                                          // Check if post data exists before displaying
-                                          if (reportData['postData'] != null)
-                                            Column(
+                                          const SizedBox(height: 12),
+                                          
+                                          if (postData != null) ...[
+                                            // Post title
+                                            _buildDetailRow(
+                                              Icons.title,
+                                              'Title',
+                                              postData['title'] ?? 'No title',
+                                              Colors.blue,
+                                            ),
+                                            const SizedBox(height: 8),
+                                            
+                                            // Post author (fixed to show correct name)
+                                            _buildDetailRow(
+                                              Icons.person,
+                                              'Author',
+                                              authorName,
+                                              Colors.green,
+                                            ),
+                                            const SizedBox(height: 8),
+                                            
+                                            // Post tags if available
+                                            if (postData['tags'] != null && postData['tags'].toString().isNotEmpty)
+                                              _buildDetailRow(
+                                                Icons.tag,
+                                                'Tags',
+                                                postData['tags'].toString(),
+                                                Colors.purple,
+                                              ),
+                                            const SizedBox(height: 8),
+                                            
+                                            // Post description
+                                            Row(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                // Post title
-                                                Text(
-                                                  'Title: ${reportData['postData']['title'] ?? 'No title'}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white70, // Slightly faded white
+                                                Icon(Icons.description, color: Colors.grey, size: 16),
+                                                const SizedBox(width: 8),
+                                                const Text(
+                                                  'Description:',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white70,
+                                                    fontSize: 13,
                                                   ),
                                                 ),
-                                                const SizedBox(height: 4), // Small spacing
-                                                // Post author
-                                                Text(
-                                                  'Author: ${reportData['postData']['username'] ?? 'Unknown'}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white70, // Consistent styling
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    postData['description'] ?? 'No description',
+                                                    style: const TextStyle(
+                                                      color: Colors.white60,
+                                                      fontSize: 13,
+                                                    ),
+                                                    maxLines: 3,
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
-                                                ),
-                                                const SizedBox(height: 4), // Small spacing
-                                                // Post description with text overflow handling
-                                                Text(
-                                                  'Description: ${reportData['postData']['description'] ?? 'No description'}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white70, // Consistent styling
-                                                  ),
-                                                  maxLines: 3, // Limit to 3 lines
-                                                  overflow: TextOverflow.ellipsis, // Show ... if text is too long
                                                 ),
                                               ],
-                                            )
-                                          else
-                                            // Fallback when post data is missing
-                                            const Text(
-                                              'Post data not available',
-                                              style: TextStyle(
-                                                color: Colors.white70,
-                                                fontStyle: FontStyle.italic, // Italic for emphasis on missing data
+                                            ),
+                                          ] else
+                                            const Center(
+                                              child: Text(
+                                                'Post data not available',
+                                                style: TextStyle(
+                                                  color: Colors.white70,
+                                                  fontStyle: FontStyle.italic,
+                                                ),
                                               ),
                                             ),
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(height: 12), // Spacing                                    
-                                    // Timestamp display with icon
-                                    Row(
-                                      children: [
-                                        // Clock icon to indicate time information
-                                        const Icon(
-                                          Icons.access_time,
-                                          size: 16, // Small icon
-                                          color: Colors.grey, // Grey for secondary information
-                                        ),
-                                        const SizedBox(width: 4), // Small spacing
-                                        // Formatted timestamp display
-                                        Text(
-                                          'Reported: ${_formatTimestamp(reportData['timestamp'])}', // Call helper function
-                                          style: const TextStyle(
-                                            fontSize: 12, // Small font for secondary info
-                                            color: Colors.grey, // Grey for secondary information
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12), // Spacing
+                                    const SizedBox(height: 16),
                                     
-                                    // Action buttons for admin to manage reports
+                                    // Timestamp with better styling
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.schedule,
+                                            size: 16,
+                                            color: Colors.grey,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Reported: ${_formatTimestamp(reportData['timestamp'])}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    
+                                    // Enhanced action buttons
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Distribute buttons evenly
                                       children: [
-                                        // Delete post button - permanent action
-                                        ElevatedButton.icon(
-                                          onPressed: () => _deletePost(reportData['postId']), // Call delete function
-                                          icon: const Icon(Icons.delete_forever, size: 16), // Delete icon
-                                          label: const Text('Delete Post'), // Button text
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red, // Red for dangerous action
-                                            foregroundColor: Colors.white, // White text for contrast
+                                        // Delete post button
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: () => _showDeleteConfirmation(reportData['postId'], postData?['title'] ?? 'this post'),
+                                            icon: const Icon(Icons.delete_forever, size: 16),
+                                            label: const Text('Delete Post'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red,
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(vertical: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                        // Dismiss report button - keeps post but removes report
-                                        ElevatedButton.icon(
-                                          onPressed: () => _dismissReport(report.id), // Call dismiss function
-                                          icon: const Icon(Icons.check, size: 16), // Check/approve icon
-                                          label: const Text('Dismiss'), // Button text
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.green, // Green for positive action
-                                            foregroundColor: Colors.white, // White text for contrast
+                                        const SizedBox(width: 8),
+                                        
+                                        // Ban user button
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: () => _showBanConfirmation(postAuthorId, authorName),
+                                            icon: const Icon(Icons.block, size: 16),
+                                            label: const Text('Ban User'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.orange,
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(vertical: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        
+                                        // Dismiss report button
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: () => _dismissReport(report.id),
+                                            icon: const Icon(Icons.check_circle, size: 16),
+                                            label: const Text('Dismiss'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.green,
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(vertical: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -618,5 +770,104 @@ class _AdminDashboardState extends State<AdminDashboard> {
         );
       },
     );
+  }
+
+  // Helper method to build detail rows
+  Widget _buildDetailRow(IconData icon, String label, String value, Color iconColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: iconColor, size: 16),
+        const SizedBox(width: 8),
+        Text(
+          '$label:',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.white70,
+            fontSize: 13,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white60,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Show confirmation dialog before deleting a post
+  Future<void> _showDeleteConfirmation(String? postId, String postTitle) async {
+    if (postId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color.fromARGB(255, 45, 45, 45),
+        title: const Text(
+          'Delete Post',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete "$postTitle"?\n\nThis action cannot be undone.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deletePost(postId);
+    }
+  }
+
+  // Show confirmation dialog before banning a user
+  Future<void> _showBanConfirmation(String? userId, String username) async {
+    if (userId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color.fromARGB(255, 45, 45, 45),
+        title: const Text(
+          'Ban User',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to ban "$username" for 10 minutes?\n\nThey will not be able to use their account during this time.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Ban User', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _banUser(userId, username);
+    }
   }
 }
