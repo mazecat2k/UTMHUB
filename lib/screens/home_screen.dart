@@ -10,6 +10,9 @@ import 'package:utmhub/screens/editpost_screen.dart';
 import 'package:utmhub/screens/notification_screen.dart'; // Import NotificationScreen
 import 'package:utmhub/widgets/banner_ad_widget.dart'; // Import Banner Ad Widget
 import 'package:utmhub/utils/ad_manager.dart'; // Import Ad Manager
+import 'package:utmhub/services/ban_service.dart'; // Import Ban Service
+import 'package:utmhub/screens/login_screen.dart'; // Import Login Screen
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 import 'dart:math'; // For random ad display
 
 
@@ -33,6 +36,56 @@ class _HomeScreenState extends State<HomeScreen> {
     _adManager.loadBannerAd();
     _adManager.loadInterstitialAd();
     _adManager.loadRewardedAd();
+    
+    // Check if user is banned when entering home screen
+    _checkUserBanStatus();
+  }
+  
+  // Method to check if the current user is banned
+  Future<void> _checkUserBanStatus() async {
+    final banStatus = await BanService.checkCurrentUserBanStatus();
+    
+    if (banStatus['isBanned'] == true && mounted) {
+      // User is banned, sign them out and redirect to login
+      await FirebaseAuth.instance.signOut();
+      
+      String banMessage;
+      if (banStatus['isPermanent'] == true) {
+        banMessage = 'Your account has been permanently suspended.\n\nReason: ${banStatus['banReason']}';
+      } else {
+        final timeRemaining = BanService.formatBanTimeRemaining(banStatus['remainingMinutes'] ?? 0);
+        banMessage = 'Your account is temporarily suspended.\n\nReason: ${banStatus['banReason']}\nTime remaining: $timeRemaining';
+      }
+      
+      // Show ban message dialog and redirect to login
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text(
+            'Account Suspended',
+            style: TextStyle(
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(banMessage),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navigate back to login screen
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -255,8 +308,9 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
     final currentUserId = AuthMethods().getCurrentUser()?.uid;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('UTM Hub'),
+        title: const Text('UTM Hub', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color.fromRGBO(224, 167, 34, 1),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           // Notification Icon with Badge
           StreamBuilder<QuerySnapshot>(
@@ -275,7 +329,7 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
               return Stack(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.notifications),
+                    icon: const Icon(Icons.notifications, color: Colors.white),
                     tooltip: 'Notifications',
                     onPressed: () {
                       Navigator.push(
@@ -317,7 +371,7 @@ Future<void> _reportPost(String postId, Map<String, dynamic> postData) async {
             },
           ),
           IconButton(
-            icon: const Text('👤', style: TextStyle(fontSize: 24)),
+            icon: const Icon(Icons.person, size: 30, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
